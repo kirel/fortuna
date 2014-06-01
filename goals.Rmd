@@ -1,0 +1,57 @@
+# Fortuna Torverteilung
+
+Tore geparst von http://www.fussballdaten.de/vereine/fortunaduesseldorf/2014/
+
+So grob mit
+```javascript
+$('table.Spiele i').map(function(){
+  return {
+    minute: parseInt($(this).text().replace(/[^\d]/g,'')),
+    player: $(this).prev().text(),
+    heimgast: $(this).closest('td').attr('class'),
+    team: $(this).closest('tr').prev().find(
+            '.'+$(this).closest('td').attr('class')
+          ).text()
+  }
+}).toArray();
+```
+
+Und dann http://jsfiddle.net/sturtevant/vUnF9/ nach CSV konvertiert.
+
+```{r}
+goals = read.table('goals.csv', header=TRUE, sep=',')
+```
+
+## Gegentore
+
+Davon interessieren uns erst mal nur die Gegentore:
+
+```{r}
+(against = subset(goals, team != 'Fortuna Düsseldorf'))
+```
+
+## Analyse der Gegentore
+
+Das durchschnittliche Gegentor fällt in der `r mean(against$minute)`-ten Minute. Der Boxplot sieht folgendermaßen aus:
+
+```{r}
+boxplot(against$minute)
+```
+
+Vielmehr sieht es sogar nach einer Gleichverteilung der Tore auf die Minuten aus. Sortiert man die Tore und plottet sie ihren Index kommt folgender Graph heraus:
+
+```{r}
+plot(sort(against$minute), 1:length(against$minute))
+```
+
+Das lässt sich auch statistisch überprüfen mit dem Chi-Quadrat-Anpassungstest:
+
+```{r}
+test = chisq.test(table(cut(against$minute, 0:90)))
+```
+
+Der p-Wert ist mit `r test$p.value` weit über jedem Schwellwert, so dass an der Gleichverteilungshypothese festgehalten werden kann.
+
+# Fazit:
+
+Die Fortuna erhält nicht, wie intuitiv angenommen, übermäßig viele Gegentore gegen Ende des Spiels.
